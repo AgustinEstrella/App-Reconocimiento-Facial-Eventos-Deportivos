@@ -1,0 +1,4 @@
+opencv-python # Para poder usar hardware en la app
+deepface[tensorflow] # Reconocimiento facial
+psycopg2-binary # Conectar app a db
+pgvector # Convertir datos biometricos a vector

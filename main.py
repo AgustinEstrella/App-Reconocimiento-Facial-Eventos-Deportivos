@@ -1,0 +1,1 @@
+#App reconocimiento facial (CLI)
