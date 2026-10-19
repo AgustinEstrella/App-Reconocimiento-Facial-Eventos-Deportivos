@@ -1,7 +1,7 @@
 from database import *
 from config import MODELO_RECONOCIMIENTO
 
-import numpy as np
+import time
 import cv2
 import face_recognition
 
@@ -9,7 +9,11 @@ def reconocimiento_facial():
     camara = cv2.VideoCapture(0) # Abre la primera cam que encuentra
     print("Iniciando cámara... Presiona 'q' para salir")
 
-    vector_detectado = None # Creamos una variable para guardar el vector
+    # Obligar a la ventana a saltar al primer plano
+    cv2.namedWindow("Escaneando Rostro", cv2.WINDOW_AUTOSIZE)
+    cv2.setWindowProperty("Escaneando Rostro", cv2.WND_PROP_TOPMOST, 1)
+
+    vector_detectado = None
 
     while True:
         ret, frame = camara.read()
@@ -34,11 +38,31 @@ def reconocimiento_facial():
             bottom *= 2
             left *= 2
 
+            # 1. Dibujamos el recuadro verde sobre el rostro encontrado
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+            # 2. Dibujamos un fondo relleno para el texto instructivo
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
+            cv2.putText(frame, "ROSTRO DETECTADO", (left + 6, bottom - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+            # 3. Guardamos el vector
             vector_detectado = rostro_actual_vector
 
+        # Mostramos el video procesado
         cv2.imshow("Escaneando Rostro", frame)
 
-        if vector_detectado is not None or (cv2.waitKey(1) & 0xFF == ord('q')):
+        # ──> MODIFICACIÓN CLAVE:
+        # Si ya guardamos un vector en este frame, forzamos a OpenCV a que dibuje la ventana
+        # y pausamos la ejecución 1.5 segundos para que el usuario llegue a verse reflejado en la pantalla.
+        if vector_detectado is not None:
+            cv2.waitKey(1) # Forzar el refresco visual de la ventana antes de congelar
+            time.sleep(1.5) # Pausa dramática de 1.5 segundos (puedes cambiarlo a 2.0 si quieres más tiempo)
+            break
+
+        # Si no hay rostro, sigue el flujo normal a ~30 FPS esperando la tecla 'q'
+        tecla = cv2.waitKey(30) & 0xFF
+        if tecla == ord('q'):
             break
 
     camara.release()
