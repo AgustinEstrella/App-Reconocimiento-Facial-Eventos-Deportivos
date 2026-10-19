@@ -63,10 +63,12 @@ def buscar_usuario(vector):
     conn = establecer_conexion_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT dni, nombre, apellido, biometria <=> %s::vector AS distancia "
+        # Antes usabamos distancia coseno (<=>) con deepface
+        # ahora con face_recognition usamos distancia euclidea (<->)
+        cursor.execute("SELECT dni, nombre, apellido, biometria <-> %s::vector AS distancia "
                        "FROM ESPECTADOR "
                        "WHERE BIOMETRIA IS NOT NULL "
-                       "ORDER BY biometria <=> %s::vector "
+                       "ORDER BY biometria <-> %s::vector "
                        "LIMIT 1;" , (vector, vector))
         return cursor.fetchone()
     except Exception as e:
