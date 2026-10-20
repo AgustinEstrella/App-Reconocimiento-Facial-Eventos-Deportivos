@@ -7,18 +7,18 @@ from database import *
 def menu():
     while True:
         print("1: Registrar usuario")
-        print("2: Identificar usuario")
+        print("2: Iniciar sesion")
         print("3: Salir")
         opcion = input("Seleccione una opcion: ")
 
         match opcion:
             case "1":
-                dni, nombre, apellido = ingreso_usuario()
-                creacion_usuario(dni, nombre, apellido)
+                dni, nombre, apellido, email,contrasenia = registro_usuario()
+                creacion_usuario(dni, nombre, apellido, email, contrasenia)
                 datos_biometricos = reconocimiento_facial()
                 adicion_rostro(datos_biometricos, dni)
             case "2":
-                buscar_usuario_biometricamente()
+                iniciar_sesion()
             case "3":
                 break
 

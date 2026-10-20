@@ -2,6 +2,9 @@ import psycopg2
 from pgvector.psycopg2 import register_vector
 from config import DB_CONFIG
 
+from argon2 import PasswordHasher #Importamos passwordhasher para hashear contraseñas
+ph = PasswordHasher()
+
 # Aqui nos conectamos a la db
 def establecer_conexion_db():
     try:
@@ -28,13 +31,15 @@ def verificacion_usuario_existente(DNI):
 
     return existe
 
-def creacion_usuario(dni, nombre, apellido):
+def creacion_usuario(dni, nombre, apellido, email, contrasenia):
     conn = establecer_conexion_db()
     cursor = conn.cursor()
 
+    hash_contrasenia = ph.hash(contrasenia)
+
     try:
-        cursor.execute("INSERT INTO ESPECTADOR (dni, nombre, apellido) "
-                       "VALUES (%s, %s, %s);", (dni, nombre, apellido))
+        cursor.execute("INSERT INTO ESPECTADOR (dni, nombre, apellido, email, contrasenia) "
+                       "VALUES (%s, %s, %s, %s, %s);", (dni, nombre, apellido, email, hash_contrasenia))
         conn.commit()
     except Exception as e:
         print(f"Error al crear usuario: {e}")
@@ -59,20 +64,37 @@ def adicion_rostro(vector, dni):
         cursor.close()
         conn.close()
 
-def buscar_usuario(vector):
+def obtener_hash(dni):
+    conn = establecer_conexion_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT contrasenia "
+                       "FROM ESPECTADOR "
+                       "WHERE dni = %s ", (dni,))
+
+        return cursor.fetchone()
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+def obtener_vector(dni, vector):
     conn = establecer_conexion_db()
     cursor = conn.cursor()
     try:
         # Antes usabamos distancia coseno (<=>) con deepface
         # ahora con face_recognition usamos distancia euclidea (<->)
-        cursor.execute("SELECT dni, nombre, apellido, biometria <-> %s::vector AS distancia "
-                       "FROM ESPECTADOR "
-                       "WHERE BIOMETRIA IS NOT NULL "
-                       "ORDER BY biometria <-> %s::vector "
-                       "LIMIT 1;" , (vector, vector))
+        cursor.execute("SELECT nombre, apellido, biometria <-> %s::vector AS distancia "
+                    "FROM ESPECTADOR "
+                    "WHERE dni = %s "
+                    "AND biometria IS NOT NULL", (vector, dni))
+
         return cursor.fetchone()
     except Exception as e:
-        print(f"Error al buscar usuario: {e}")
+        print(f"Error: {e}")
     finally:
         cursor.close()
         conn.close()
